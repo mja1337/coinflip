@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Private Key Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .coin {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%; /* Make circles */
+            border: 2px solid #000;
+            display: inline-block;
+            margin: 5px;
+            position: relative;
+            background: radial-gradient(circle, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 70%);
+        }
+        .coin::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .coin::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            bottom: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .coin-heads {
+            background-color: #ffd700; /* gold */
+        }
+        .coin-tails {
+            background-color: #c0c0c0; /* silver */
+        }
+    </style>
+</head>
+<body>
+    <h1>Bitcoin Private Key Generator</h1>
+    <p>Click the button to simulate 256 coin flips and generate a private key.</p>
+    <button id="generateButton">Generate Private Key</button>
+    <div id="privateKey"></div>
+    <div id="verificationStatus"></div>
+
+    <script>
+        // Function to simulate a coin flip
+        function flipCoin() {
+            return Math.random() < 0.5 ? 'Heads' : 'Tails';
+        }
+
+        // Function to convert binary string to hexadecimal string
+		function binaryToHex(binary) {
+			var hex = '';
+			for (var i = 0; i < binary.length; i += 8) { // Process 8 bits at a time
+				var byte = binary.substr(i, 8);
+				var decimal = parseInt(byte, 2);
+				var hexByte = decimal.toString(16).padStart(2, '0'); // Convert to hexadecimal and pad with zeros
+				hex += hexByte;
+			}
+			return hex.toUpperCase(); // Convert to uppercase for consistency
+		}
+
+        // Function to verify a Bitcoin private key
+		function verifyPrivateKey(hexPrivateKey) {
+			// Check length
+			if (hexPrivateKey.length !== 64) {
+				return "Length is not 64 characters";
+			}
+
+			// Check range
+			const curveOrder = 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141';
+			const privateKeyInt = BigInt('0x' + hexPrivateKey);
+			const curveOrderInt = BigInt('0x' + curveOrder);
+			if (privateKeyInt >= curveOrderInt || privateKeyInt <= 0n) {
+				return "Private key is not within the valid range";
+			}
+
+			// Check for leading zeros
+			if (hexPrivateKey.match(/^0+/)) {
+				return "Private key should not start with leading zeros";
+			}
+
+			// Check for special cases
+			if (hexPrivateKey === '0000000000000000000000000000000000000000000000000000000000000000' || 
+				hexPrivateKey === curveOrder) {
+				return "Private key is a special case and is invalid";
+			}
+
+			return "Valid Bitcoin private key";
+		}
+
+        // Function to generate a private key using coin flips
+		function generatePrivateKey() {
+			var privateKey = '';
+			var privateKeySoFar = '';
+			var i = 0;
+
+			function flipAndDisplay() {
+				if (i < 256) {
+					var flipResult = flipCoin();
+					privateKeySoFar += flipResult === 'Heads' ? '1' : '0';
+					displayPrivateKey(flipResult, privateKeySoFar, false);
+					i++;
+					setTimeout(flipAndDisplay, 5); // Delay between each flip (milliseconds)
+				} else {
+					console.log("Generated Private Key Length:", privateKeySoFar.length); // Log the length
+					displayPrivateKey('', privateKeySoFar, true); // Final display
+				}
+			}
+
+			flipAndDisplay();
+		}
+
+        // Function to display the generated private key and visualize each coin flip
+		function displayPrivateKey(flipResult, privateKeySoFar, finalDisplay) {
+			var privateKeyDiv = document.getElementById("privateKey");
+
+			// Visualize each coin flip
+			var coinDiv = document.createElement("div");
+			coinDiv.classList.add("coin");
+			coinDiv.classList.add(flipResult === 'Heads' ? "coin-heads" : "coin-tails");
+			coinDiv.textContent = flipResult === 'Heads' ? '1' : '0';
+			privateKeyDiv.appendChild(coinDiv);
+
+			// Final display
+			if (finalDisplay) {
+				var privateKeyOutput = document.createElement("p");
+				privateKeyOutput.textContent = "Generated Private Key Length: " + privateKeySoFar.length; // Log length
+				privateKeyDiv.appendChild(privateKeyOutput);
+				
+				var hexPrivateKey = binaryToHex(privateKeySoFar);
+				var hexPrivateKeyOutput = document.createElement("p");
+				hexPrivateKeyOutput.textContent = "Final Private Key: " + hexPrivateKey;
+				privateKeyDiv.appendChild(hexPrivateKeyOutput);
+
+				console.log("Final Private Key Length:", hexPrivateKey.length); // Log length of final private key
+
+				// Verify the generated private key
+				var verificationStatusDiv = document.getElementById("verificationStatus");
+				var verificationResult = verifyPrivateKey(hexPrivateKey);
+				verificationStatusDiv.textContent = "Verification Status: " + verificationResult;
+				if (verificationResult === "Valid Bitcoin private key") {
+					verificationStatusDiv.style.color = "green";
+				} else {
+					verificationStatusDiv.style.color = "red";
+				}
+			}
+		}
+
+
+        // Event listener for the button click
+        document.getElementById("generateButton").addEventListener("click", function() {
+            generatePrivateKey();
+        });
+    </script>
+</body>
+</html>
