@@ -105,6 +105,9 @@
 
         // Function to generate a private key using coin flips
 		function generatePrivateKey() {
+            // Disable the button to prevent multiple clicks
+            document.getElementById("generateButton").disabled = true;
+
 			var privateKey = '';
 			var privateKeySoFar = '';
 			var i = 0;
@@ -119,6 +122,8 @@
 				} else {
 					console.log("Generated Private Key Length:", privateKeySoFar.length); // Log the length
 					displayPrivateKey('', privateKeySoFar, true); // Final display
+                    // Enable the button after key generation is complete
+                    document.getElementById("generateButton").disabled = false;
 				}
 			}
 
